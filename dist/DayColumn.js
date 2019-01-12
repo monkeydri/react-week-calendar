@@ -25,7 +25,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var propTypes = {
   colPos: _propTypes2.default.number.isRequired,
   dayIntervals: _propTypes2.default.array.isRequired,
-  cellHeight: _propTypes2.default.number.isRequired,
+  getCellRef: _propTypes2.default.func.isRequired,
   dayCellComponent: _propTypes2.default.func.isRequired,
   onSelectionStart: _propTypes2.default.func.isRequired,
   onCellMouseEnter: _propTypes2.default.func.isRequired
@@ -62,7 +62,7 @@ var DayColumn = function (_React$Component) {
       var _this2 = this;
 
       var _props = this.props,
-          cellHeight = _props.cellHeight,
+          getCellRef = _props.getCellRef,
           colPos = _props.colPos,
           dayIntervals = _props.dayIntervals;
 
@@ -72,9 +72,11 @@ var DayColumn = function (_React$Component) {
         return _react2.default.createElement(
           'div',
           {
+            ref: rowPos === 0 ? function (el) {
+              return getCellRef(el);
+            } : null,
             key: rowPos,
             className: 'calendarBody__cell',
-            style: { height: cellHeight },
             onMouseEnter: _this2.handleMouseEnter(colPos, rowPos)
           },
           _react2.default.createElement(DayCell, {
@@ -82,7 +84,6 @@ var DayColumn = function (_React$Component) {
             rowPos: rowPos,
             startTime: interval.start,
             endTime: interval.end,
-            cellHeight: _this2.props.cellHeight,
             startSelection: _this2.handleStartSelection(colPos, rowPos)
           })
         );

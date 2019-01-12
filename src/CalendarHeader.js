@@ -12,6 +12,11 @@ const propTypes = {
 };
 
 export class CalendarHeader extends React.Component {
+  constructor(props) {
+    super(props);
+    moment.locale('fr'); // TODO : make it work
+  }
+
   shouldComponentUpdate(nextProps) {
     // for columnDimensions return new object
     return nextProps.numberOfDays !== this.props.numberOfDays || !nextProps.firstDay.isSame(this.props.firstDay, 'day')
@@ -33,12 +38,10 @@ export class CalendarHeader extends React.Component {
     }
 
     const weekdayColumns = [];
-    let totalWidth = 0;
 
     for (let i = 0; i < numberOfDays; i += 1) {
-      const date = moment(firstDay).add(i, 'd');
-      const { width } = columnDimensions[i];
-      totalWidth += width;
+      const date = moment(firstDay).locale('fr').add(i, 'd');
+      const width = `${100 / numberOfDays}%`;
       const newCell = (
         <div key={i} className="weekCalendar__headerColumn" style={{ width }}>
           <HeaderCell date={date} dayFormat={dayFormat} />
@@ -48,7 +51,7 @@ export class CalendarHeader extends React.Component {
     }
 
     return (
-      <div style={{ width: totalWidth }} className="weekCalendar__headerWrapper">
+      <div className="weekCalendar__headerWrapper">
         {weekdayColumns}
       </div>);
   }

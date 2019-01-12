@@ -10,16 +10,26 @@ const propTypes = {
   numberOfDays: PropTypes.number.isRequired,
   scaleUnit: PropTypes.number.isRequired,
   scaleIntervals: PropTypes.array.isRequired,
-  cellHeight: PropTypes.number.isRequired,
+  getCellHeight: PropTypes.func.isRequired,
   dayCellComponent: PropTypes.func.isRequired,
   onSelectionStart: PropTypes.func.isRequired,
   onCellMouseEnter: PropTypes.func.isRequired,
 };
 
 class CalendarBody extends React.Component {
+  constructor(props) {
+    super(props);
+    this.cellRef = React.createRef();
+  }
+
+  componentDidMount() {
+    // get cell height => TODO : not required anymore
+    const cellHeight = this.cellRef.clientHeight;
+    this.props.getCellHeight(cellHeight);
+  }
+
   shouldComponentUpdate(nextProps) {
     return nextProps.scaleUnit !== this.props.scaleUnit
-      || nextProps.cellHeight !== this.props.cellHeight
       || nextProps.numberOfDays !== this.props.numberOfDays
       || !nextProps.firstDay.isSame(this.props.firstDay, 'day');
   }
@@ -30,7 +40,6 @@ class CalendarBody extends React.Component {
       numberOfDays,
       scaleUnit,
       scaleIntervals,
-      cellHeight,
       dayCellComponent,
     } = this.props;
 
@@ -41,12 +50,13 @@ class CalendarBody extends React.Component {
       weekdayColumns.push(<DayColumn
         key={i}
         colPos={i}
-        cellHeight={cellHeight}
+        getCellRef={i === 0 ? (el) => { this.cellRef = el; } : () => {}}
         dayCellComponent={dayCellComponent}
         scaleUnit={scaleUnit}
         dayIntervals={intervals}
         onSelectionStart={this.props.onSelectionStart}
         onCellMouseEnter={this.props.onCellMouseEnter}
+        getCellHeight={height => this.getCellHeight(height)}
       />);
     }
 

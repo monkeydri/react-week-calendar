@@ -13,6 +13,7 @@ import Event from './Event';
 import Modal from './Modal';
 
 const propTypes = {
+  className: PropTypes.string,
   firstDay: PropTypes.object, // the first day in the caledar
   numberOfDays: PropTypes.number,
   scaleHeaderTitle: PropTypes.string,
@@ -23,7 +24,7 @@ const propTypes = {
   endTime: PropTypes.object, // the end time of the scale and calendar
   scaleUnit: PropTypes.number,
   scaleFormat: PropTypes.string,
-  cellHeight: PropTypes.number,
+  headerCellHeight: PropTypes.number,
   dayCellComponent: PropTypes.func,
 
   selectedIntervals: PropTypes.array,
@@ -40,6 +41,7 @@ const propTypes = {
 };
 
 const defaultProps = {
+  className: '',
   firstDay: moment(),
   numberOfDays: 7,
   scaleHeaderTitle: '',
@@ -49,13 +51,13 @@ const defaultProps = {
   endTime: moment({ h: 23, m: 59 }),
   scaleUnit: 15,
   scaleFormat: 'HH:mm',
-  cellHeight: 25,
+  headerCellHeight: 25,
   dayCellComponent: DayCell,
   selectedIntervals: [],
   eventComponent: Event,
   modalComponent: Modal,
   useModal: true,
-  eventSpacing: 15,
+  eventSpacing: 15, // TODO : use percentage ?
 };
 
 class WeekCalendar extends React.Component {
@@ -63,6 +65,10 @@ class WeekCalendar extends React.Component {
     super(props);
     const { scaleUnit, startTime, endTime } = props;
     const scaleIntervals = Utils.getIntervalsByDuration(scaleUnit, startTime, endTime);
+
+    this.cellHeight = 0; // TODO : not required anymore
+
+    moment.locale('fr'); // TODO : make it work
 
     this.state = {
       scaleIntervals,
@@ -264,7 +270,6 @@ class WeekCalendar extends React.Component {
     const {
       firstDay,
       numberOfDays,
-      cellHeight,
       scaleUnit,
       selectedIntervals,
       eventSpacing,
@@ -296,20 +301,23 @@ class WeekCalendar extends React.Component {
             return;
           }
 
-          const beforeIntersectionNumber = array.filter((i, i1) => i1 < index && interval.start.isBefore(i.end)).length;
-          const afterIntersectionNumber = array.filter((i, i1) => i1 > index && interval.end.isAfter(i.start)).length;
-          const groupIntersection = (beforeIntersectionNumber + afterIntersectionNumber + 1);
+          // const beforeIntersectionNumber = array.filter((i, i1) => i1 < index && interval.start.isBefore(i.end)).length;
+          // const afterIntersectionNumber = array.filter((i, i1) => i1 > index && interval.end.isAfter(i.start)).length;
+          // const groupIntersection = (beforeIntersectionNumber + afterIntersectionNumber + 1); TODO : groupIntersection ?
 
           let endY = Utils.getNumberOfCells(interval.end, scaleUnit, true, offsetTop);
           if (endY > scaleIntervals.length) {
             endY = scaleIntervals.length;
           }
-          const top = startY * cellHeight;
-          const width = (columnDimensions[dayIndex].width - eventSpacing) / groupIntersection;
 
-          //TODO: dividing  by the GroupIntersection doesn't seem to work all that great...
-          const left = columnDimensions[dayIndex].left + ((width + Math.floor(eventSpacing / groupIntersection)) * beforeIntersectionNumber);
-          const height = (endY - startY) * cellHeight;
+          const cellHeight = 100 / scaleIntervals.length;
+          const cellWidth = 100 / numberOfDays;
+
+          const top = `${startY * cellHeight}%`;
+          const width = `${cellWidth}%`; // TODO : use percentage eventSpacing
+          const left = `${dayIndex * cellWidth}%`;
+          const height = `${(endY - startY) * cellHeight}%`;
+
           const eventWrapperStyle = {
             top,
             left,
@@ -333,16 +341,23 @@ class WeekCalendar extends React.Component {
     return result;
   }
 
+  // TODO : fix renderOverlay
   renderOverlay() {
     if (this.state.startSelectionPosition != null) {
+      const { numberOfDays } = this.props;
       const startPosition = this.state.startSelectionPosition;
-      const { mousePosition } = this.state;
+      const { mousePosition, scaleIntervals } = this.state;
 
-      const top = Math.min(startPosition.y, mousePosition.y) * this.props.cellHeight;
-      const { left } = this.state.columnDimensions[Math.min(startPosition.x, mousePosition.x)];
-      const lastSelectedColumn = this.state.columnDimensions[Math.max(startPosition.x, mousePosition.x)];
-      const width = (lastSelectedColumn.left - left) + lastSelectedColumn.width;
-      const height = ((Math.max(startPosition.y, mousePosition.y) + 1) * this.props.cellHeight) - top;
+      const cellHeight = 100 / scaleIntervals;
+      const cellWidth = 100 / numberOfDays;
+
+      console.log('startPosition', startPosition);
+      console.log('mousePosition', mousePosition);
+
+      const top = `${startPosition.y * cellHeight}%`;
+      const left = `${startPosition.x * cellWidth}%`;
+      const width = `${(startPosition.x - mousePosition.x) * cellWidth}%`;
+      const height = `${(startPosition.y - mousePosition.y) * cellHeight}%`;
       const overlayStyle = {
         top,
         left,
@@ -383,13 +398,13 @@ class WeekCalendar extends React.Component {
 
   render() {
     const {
+      className,
       firstDay,
       numberOfDays,
       headerCellComponent,
       dayFormat,
       scaleUnit,
       scaleFormat,
-      cellHeight,
       dayCellComponent,
       scaleHeaderTitle,
     } = this.props;
@@ -397,7 +412,7 @@ class WeekCalendar extends React.Component {
     const isSelection = this.state.startSelectionPosition != null;
 
     return (
-      <div className={isSelection ? 'weekCalendar weekCalendar__status_selection' : 'weekCalendar'}>
+      <div className={`${isSelection ? 'weekCalendar weekCalendar__status_selection' : 'weekCalendar'} ${className}`}>
         <div className="weekCalendar__scaleHeader" >
           <span>{scaleHeaderTitle}</span>
         </div>
@@ -415,7 +430,7 @@ class WeekCalendar extends React.Component {
             scaleUnit={this.props.scaleUnit}
             scaleFormat={scaleFormat}
             scaleIntervals={this.state.scaleIntervals}
-            cellHeight={this.props.cellHeight}
+            cellHeight={this.props.headerCellHeight}
           />
         </div>
         <div className="weekCalendar__content" onScroll={this.handleScroll}>
@@ -424,7 +439,7 @@ class WeekCalendar extends React.Component {
             numberOfDays={numberOfDays}
             scaleUnit={scaleUnit}
             scaleIntervals={this.state.scaleIntervals}
-            cellHeight={cellHeight}
+            getCellHeight={(cellHeight) => { this.cellHeight = cellHeight; }}
             dayCellComponent={dayCellComponent}
             onSelectionStart={this.handleSelectionStart}
             onCellMouseEnter={this.handleCellMouseEnter}

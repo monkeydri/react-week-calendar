@@ -14,6 +14,10 @@ var _propTypes = require('prop-types');
 
 var _propTypes2 = _interopRequireDefault(_propTypes);
 
+var _moment = require('moment');
+
+var _moment2 = _interopRequireDefault(_moment);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -30,10 +34,13 @@ var propTypes = {
 var HeaderCell = function (_React$PureComponent) {
   _inherits(HeaderCell, _React$PureComponent);
 
-  function HeaderCell() {
+  function HeaderCell(props) {
     _classCallCheck(this, HeaderCell);
 
-    return _possibleConstructorReturn(this, (HeaderCell.__proto__ || Object.getPrototypeOf(HeaderCell)).apply(this, arguments));
+    var _this = _possibleConstructorReturn(this, (HeaderCell.__proto__ || Object.getPrototypeOf(HeaderCell)).call(this, props));
+
+    _moment2.default.locale('fr'); // TODO : make it work
+    return _this;
   }
 
   _createClass(HeaderCell, [{

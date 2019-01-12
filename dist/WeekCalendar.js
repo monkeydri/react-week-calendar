@@ -63,6 +63,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var propTypes = {
+  className: _propTypes2.default.string,
   firstDay: _propTypes2.default.object, // the first day in the caledar
   numberOfDays: _propTypes2.default.number,
   scaleHeaderTitle: _propTypes2.default.string,
@@ -73,7 +74,7 @@ var propTypes = {
   endTime: _propTypes2.default.object, // the end time of the scale and calendar
   scaleUnit: _propTypes2.default.number,
   scaleFormat: _propTypes2.default.string,
-  cellHeight: _propTypes2.default.number,
+  headerCellHeight: _propTypes2.default.number,
   dayCellComponent: _propTypes2.default.func,
 
   selectedIntervals: _propTypes2.default.array,
@@ -90,6 +91,7 @@ var propTypes = {
 };
 
 var defaultProps = {
+  className: '',
   firstDay: (0, _moment2.default)(),
   numberOfDays: 7,
   scaleHeaderTitle: '',
@@ -99,13 +101,13 @@ var defaultProps = {
   endTime: (0, _moment2.default)({ h: 23, m: 59 }),
   scaleUnit: 15,
   scaleFormat: 'HH:mm',
-  cellHeight: 25,
+  headerCellHeight: 25,
   dayCellComponent: _DayCell2.default,
   selectedIntervals: [],
   eventComponent: _Event2.default,
   modalComponent: _Modal2.default,
   useModal: true,
-  eventSpacing: 15
+  eventSpacing: 15 // TODO : use percentage ?
 };
 
 var WeekCalendar = function (_React$Component) {
@@ -123,6 +125,10 @@ var WeekCalendar = function (_React$Component) {
         endTime = props.endTime;
 
     var scaleIntervals = Utils.getIntervalsByDuration(scaleUnit, startTime, endTime);
+
+    _this.cellHeight = 0; // TODO : not required anymore
+
+    _moment2.default.locale('fr'); // TODO : make it work
 
     _this.state = {
       scaleIntervals: scaleIntervals,
@@ -168,7 +174,6 @@ var WeekCalendar = function (_React$Component) {
       var _props = this.props,
           firstDay = _props.firstDay,
           numberOfDays = _props.numberOfDays,
-          cellHeight = _props.cellHeight,
           scaleUnit = _props.scaleUnit,
           selectedIntervals = _props.selectedIntervals,
           eventSpacing = _props.eventSpacing;
@@ -203,24 +208,23 @@ var WeekCalendar = function (_React$Component) {
               return;
             }
 
-            var beforeIntersectionNumber = array.filter(function (i, i1) {
-              return i1 < index && interval.start.isBefore(i.end);
-            }).length;
-            var afterIntersectionNumber = array.filter(function (i, i1) {
-              return i1 > index && interval.end.isAfter(i.start);
-            }).length;
-            var groupIntersection = beforeIntersectionNumber + afterIntersectionNumber + 1;
+            // const beforeIntersectionNumber = array.filter((i, i1) => i1 < index && interval.start.isBefore(i.end)).length;
+            // const afterIntersectionNumber = array.filter((i, i1) => i1 > index && interval.end.isAfter(i.start)).length;
+            // const groupIntersection = (beforeIntersectionNumber + afterIntersectionNumber + 1); TODO : groupIntersection ?
 
             var endY = Utils.getNumberOfCells(interval.end, scaleUnit, true, offsetTop);
             if (endY > scaleIntervals.length) {
               endY = scaleIntervals.length;
             }
-            var top = startY * cellHeight;
-            var width = (columnDimensions[dayIndex].width - eventSpacing) / groupIntersection;
 
-            //TODO: dividing  by the GroupIntersection doesn't seem to work all that great...
-            var left = columnDimensions[dayIndex].left + (width + Math.floor(eventSpacing / groupIntersection)) * beforeIntersectionNumber;
-            var height = (endY - startY) * cellHeight;
+            var cellHeight = 100 / scaleIntervals.length;
+            var cellWidth = 100 / numberOfDays;
+
+            var top = startY * cellHeight + '%';
+            var width = cellWidth + '%'; // TODO : use percentage eventSpacing
+            var left = dayIndex * cellWidth + '%';
+            var height = (endY - startY) * cellHeight + '%';
+
             var eventWrapperStyle = {
               top: top,
               left: left,
@@ -247,20 +251,31 @@ var WeekCalendar = function (_React$Component) {
       }
       return result;
     }
+
+    // TODO : fix renderOverlay
+
   }, {
     key: 'renderOverlay',
     value: function renderOverlay() {
       if (this.state.startSelectionPosition != null) {
+        var numberOfDays = this.props.numberOfDays;
+
         var startPosition = this.state.startSelectionPosition;
-        var mousePosition = this.state.mousePosition;
+        var _state2 = this.state,
+            mousePosition = _state2.mousePosition,
+            scaleIntervals = _state2.scaleIntervals;
 
 
-        var top = Math.min(startPosition.y, mousePosition.y) * this.props.cellHeight;
-        var left = this.state.columnDimensions[Math.min(startPosition.x, mousePosition.x)].left;
+        var cellHeight = 100 / scaleIntervals;
+        var cellWidth = 100 / numberOfDays;
 
-        var lastSelectedColumn = this.state.columnDimensions[Math.max(startPosition.x, mousePosition.x)];
-        var width = lastSelectedColumn.left - left + lastSelectedColumn.width;
-        var height = (Math.max(startPosition.y, mousePosition.y) + 1) * this.props.cellHeight - top;
+        console.log('startPosition', startPosition);
+        console.log('mousePosition', mousePosition);
+
+        var top = startPosition.y * cellHeight + '%';
+        var left = startPosition.x * cellWidth + '%';
+        var width = (startPosition.x - mousePosition.x) * cellWidth + '%';
+        var height = (startPosition.y - mousePosition.y) * cellHeight + '%';
         var overlayStyle = {
           top: top,
           left: left,
@@ -302,14 +317,16 @@ var WeekCalendar = function (_React$Component) {
   }, {
     key: 'render',
     value: function render() {
+      var _this3 = this;
+
       var _props2 = this.props,
+          className = _props2.className,
           firstDay = _props2.firstDay,
           numberOfDays = _props2.numberOfDays,
           headerCellComponent = _props2.headerCellComponent,
           dayFormat = _props2.dayFormat,
           scaleUnit = _props2.scaleUnit,
           scaleFormat = _props2.scaleFormat,
-          cellHeight = _props2.cellHeight,
           dayCellComponent = _props2.dayCellComponent,
           scaleHeaderTitle = _props2.scaleHeaderTitle;
 
@@ -318,7 +335,7 @@ var WeekCalendar = function (_React$Component) {
 
       return _react2.default.createElement(
         'div',
-        { className: isSelection ? 'weekCalendar weekCalendar__status_selection' : 'weekCalendar' },
+        { className: (isSelection ? 'weekCalendar weekCalendar__status_selection' : 'weekCalendar') + ' ' + className },
         _react2.default.createElement(
           'div',
           { className: 'weekCalendar__scaleHeader' },
@@ -346,7 +363,7 @@ var WeekCalendar = function (_React$Component) {
             scaleUnit: this.props.scaleUnit,
             scaleFormat: scaleFormat,
             scaleIntervals: this.state.scaleIntervals,
-            cellHeight: this.props.cellHeight
+            cellHeight: this.props.headerCellHeight
           })
         ),
         _react2.default.createElement(
@@ -357,7 +374,9 @@ var WeekCalendar = function (_React$Component) {
             numberOfDays: numberOfDays,
             scaleUnit: scaleUnit,
             scaleIntervals: this.state.scaleIntervals,
-            cellHeight: cellHeight,
+            getCellHeight: function getCellHeight(cellHeight) {
+              _this3.cellHeight = cellHeight;
+            },
             dayCellComponent: dayCellComponent,
             onSelectionStart: this.handleSelectionStart,
             onCellMouseEnter: this.handleCellMouseEnter
@@ -374,10 +393,10 @@ var WeekCalendar = function (_React$Component) {
 }(_react2.default.Component);
 
 var _initialiseProps = function _initialiseProps() {
-  var _this3 = this;
+  var _this4 = this;
 
   this.calculateColumnDimension = function () {
-    var numberOfDays = _this3.props.numberOfDays;
+    var numberOfDays = _this4.props.numberOfDays;
 
     var columnDimensions = [];
     for (var i = 0; i < numberOfDays; i += 1) {
@@ -393,11 +412,11 @@ var _initialiseProps = function _initialiseProps() {
         width: columnWidth
       });
     }
-    _this3.setState({ columnDimensions: columnDimensions });
+    _this4.setState({ columnDimensions: columnDimensions });
   };
 
   this.handleScroll = function (e) {
-    _this3.setState({
+    _this4.setState({
       scrollPosition: {
         top: e.target.scrollTop,
         left: e.target.scrollLeft
@@ -406,8 +425,8 @@ var _initialiseProps = function _initialiseProps() {
   };
 
   this.handleCellMouseEnter = function (col, row) {
-    if (_this3.state.startSelectionPosition != null) {
-      _this3.setState({
+    if (_this4.state.startSelectionPosition != null) {
+      _this4.setState({
         mousePosition: {
           x: col,
           y: row
@@ -421,7 +440,7 @@ var _initialiseProps = function _initialiseProps() {
       x: col,
       y: row
     };
-    _this3.setState({
+    _this4.setState({
       startSelectionPosition: startSelectionPosition,
       mousePosition: startSelectionPosition
     });
@@ -432,14 +451,14 @@ var _initialiseProps = function _initialiseProps() {
       return;
     }
 
-    var _props3 = _this3.props,
+    var _props3 = _this4.props,
         firstDay = _props3.firstDay,
         scaleUnit = _props3.scaleUnit,
         useModal = _props3.useModal;
-    var _state2 = _this3.state,
-        startSelectionPosition = _state2.startSelectionPosition,
-        mousePosition = _state2.mousePosition,
-        scaleIntervals = _state2.scaleIntervals;
+    var _state3 = _this4.state,
+        startSelectionPosition = _state3.startSelectionPosition,
+        mousePosition = _state3.mousePosition,
+        scaleIntervals = _state3.scaleIntervals;
 
 
     if (startSelectionPosition == null) {
@@ -469,66 +488,66 @@ var _initialiseProps = function _initialiseProps() {
         start: start,
         end: end
       };
-      _this3.setState({
+      _this4.setState({
         preselectedInterval: preselectedInterval,
         updateEvent: false
       });
     } else {
       var result = Utils.getIntervals(start, end);
-      if (_this3.props.onIntervalSelect) {
-        _this3.props.onIntervalSelect(result);
+      if (_this4.props.onIntervalSelect) {
+        _this4.props.onIntervalSelect(result);
       }
     }
 
-    _this3.setState({
+    _this4.setState({
       startSelectionPosition: null,
       mousePosition: null
     });
   };
 
   this.removePreselectedInterval = function () {
-    var _state3 = _this3.state,
-        preselectedInterval = _state3.preselectedInterval,
-        updateEvent = _state3.updateEvent;
-
-    if (updateEvent && _this3.props.onIntervalRemove) {
-      _this3.props.onIntervalRemove(preselectedInterval);
-    }
-    _this3.setState({ preselectedInterval: null });
-  };
-
-  this.submitPreselectedInterval = function (newValue) {
-    var _state4 = _this3.state,
+    var _state4 = _this4.state,
         preselectedInterval = _state4.preselectedInterval,
         updateEvent = _state4.updateEvent;
 
+    if (updateEvent && _this4.props.onIntervalRemove) {
+      _this4.props.onIntervalRemove(preselectedInterval);
+    }
+    _this4.setState({ preselectedInterval: null });
+  };
+
+  this.submitPreselectedInterval = function (newValue) {
+    var _state5 = _this4.state,
+        preselectedInterval = _state5.preselectedInterval,
+        updateEvent = _state5.updateEvent;
+
 
     if (updateEvent) {
-      if (_this3.props.onIntervalUpdate) {
-        _this3.props.onIntervalUpdate(_extends({}, preselectedInterval, newValue));
+      if (_this4.props.onIntervalUpdate) {
+        _this4.props.onIntervalUpdate(_extends({}, preselectedInterval, newValue));
       }
-    } else if (_this3.props.onIntervalSelect) {
+    } else if (_this4.props.onIntervalSelect) {
       var _intervals = Utils.getIntervals(preselectedInterval.start, preselectedInterval.end);
       var result = _intervals.map(function (interval) {
         return _extends({}, interval, newValue);
       });
-      _this3.props.onIntervalSelect(result);
+      _this4.props.onIntervalSelect(result);
     }
 
-    _this3.setState({ preselectedInterval: null });
+    _this4.setState({ preselectedInterval: null });
   };
 
   this.closeModule = function () {
-    _this3.setState({
+    _this4.setState({
       preselectedInterval: null
     });
   };
 
   this.handleEventClick = function (oEvent) {
-    if (_this3.props.onEventClick) {
-      _this3.props.onEventClick(oEvent);
+    if (_this4.props.onEventClick) {
+      _this4.props.onEventClick(oEvent);
     }
-    _this3.setState({
+    _this4.setState({
       preselectedInterval: oEvent,
       updateEvent: true
     });

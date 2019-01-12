@@ -38,10 +38,13 @@ var propTypes = {
 var CalendarHeader = exports.CalendarHeader = function (_React$Component) {
   _inherits(CalendarHeader, _React$Component);
 
-  function CalendarHeader() {
+  function CalendarHeader(props) {
     _classCallCheck(this, CalendarHeader);
 
-    return _possibleConstructorReturn(this, (CalendarHeader.__proto__ || Object.getPrototypeOf(CalendarHeader)).apply(this, arguments));
+    var _this = _possibleConstructorReturn(this, (CalendarHeader.__proto__ || Object.getPrototypeOf(CalendarHeader)).call(this, props));
+
+    _moment2.default.locale('fr'); // TODO : make it work
+    return _this;
   }
 
   _createClass(CalendarHeader, [{
@@ -67,13 +70,10 @@ var CalendarHeader = exports.CalendarHeader = function (_React$Component) {
       }
 
       var weekdayColumns = [];
-      var totalWidth = 0;
 
       for (var i = 0; i < numberOfDays; i += 1) {
-        var date = (0, _moment2.default)(firstDay).add(i, 'd');
-        var width = columnDimensions[i].width;
-
-        totalWidth += width;
+        var date = (0, _moment2.default)(firstDay).locale('fr').add(i, 'd');
+        var width = 100 / numberOfDays + '%';
         var newCell = _react2.default.createElement(
           'div',
           { key: i, className: 'weekCalendar__headerColumn', style: { width: width } },
@@ -84,7 +84,7 @@ var CalendarHeader = exports.CalendarHeader = function (_React$Component) {
 
       return _react2.default.createElement(
         'div',
-        { style: { width: totalWidth }, className: 'weekCalendar__headerWrapper' },
+        { className: 'weekCalendar__headerWrapper' },
         weekdayColumns
       );
     }
